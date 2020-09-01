@@ -6,8 +6,11 @@ const nodemailer = require('nodemailer');
 
 admin.initializeApp();
 
-const gmailEmail = functions.config().gmail.login;
-const gmailPassword = functions.config().gmail.pass;
+// const gmailEmail = functions.config().gmail.login;
+// const gmailPassword = functions.config().gmail.pass;
+
+const gmailEmail = 'bachellerieloic@gmail.com'
+const gmailPassword = 'freeBachelle2794'
 
 
 var goMail = function (data, isContactForm = false) {
@@ -32,7 +35,8 @@ var goMail = function (data, isContactForm = false) {
                 'Name: ' + data.name + '<br>' +
                 'Email: ' + data.email + '<br>' +
                 'Subject: ' + data.subject + '<br>' +
-                'data: ' + data.message + '<br>'
+                'data: ' + data.message + '<br>' +
+                'url: ' + data.url
         };
     } else {
         mailOptions = {
@@ -58,15 +62,21 @@ var goMail = function (data, isContactForm = false) {
 //.onDataAdded watches for changes in database
 
 // Call To Action
-exports.onDataAdded = functions.database.ref('/callToAction/{sessionId}').onCreate(function (snap, context) {
+exports.onDataAdded = functions.database.ref('/forms/Dronebook/{sessionId}').onCreate(function (snap, context) {
     const createdData = snap.val();
     console.log('Created Data CTA : %s', createdData);
     return goMail(text);
 });
 
 // Contact Form
-exports.onDataAdded = functions.database.ref('/contacts/{sessionId}').onCreate(function (snap, context) {
+exports.onDataAdded = functions.database.ref('/forms/Dronebook/{sessionId}').onCreate(function (snap, context) {
     const createdData = snap.val();
     console.log('Created Data Contact : %s', createdData);
     return goMail(createdData, true);
+});
+
+exports.onDataAdded = functions.database.ref('/forms/{sessionId}').onCreate(function (snap, context) {
+    const createdData = snap.val();
+    console.log('Created Data CTA : %s', createdData);
+    return goMail(text);
 });
