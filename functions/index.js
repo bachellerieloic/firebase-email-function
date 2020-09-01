@@ -75,7 +75,7 @@ exports.onDataAdded = functions.database.ref('/forms/Dronebook/{sessionId}').onC
     return goMail(createdData, true);
 });
 
-exports.onDataAdded = functions.database.ref('/forms/{sessionId}').onCreate(function (snap, context) {
+exports.onDataAdded = functions.database.ref('/forms').onCreate(function (snap, context) {
     const createdData = snap.val();
     console.log('Created Data CTA : %s', createdData);
     return goMail(text);
