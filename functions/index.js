@@ -2,73 +2,54 @@
 
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const nodemailer = require('nodemailer');
-
-
-const gmailEmail = functions.config().gmail.login;
-const gmailPassword = functions.config().gmail.pass;
+const mailjet = require ('node-mailjet')
+    .connect('efec36e0974e64034af10641df59b1ba', '1519332e8a2d44b26e07a629f7e632fd')
 
 admin.initializeApp();
 
-
-var goMail = function (message, isContact = false) {
-
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: gmailEmail,
-            pass: gmailPassword
-        },
+// Call To Action
+exports.onEmailAdded = functions.firestore
+    .document('/callToActionEmails/{docId}')
+    .onCreate((snap, context) => {
+        try {
+            const emailAddress = snap.data().email
+            // console.log('Finlo Landing - Added New Email - : %s', snap.data().email);
+            return sendEmail(emailAddress)
+        } catch (error) {
+            console.log('ERROR', error)
+        }
     });
 
-    let mailOptions = {}
-    if(isContact) {
-        mailOptions = {
-            from: gmailEmail, // sender address
-            to: 'bachellerieloic@gmail.com', // list of receivers
-            subject: 'Contact Form  ✔ ' + message.subject, // Subject line
-            text: ' - ' + message.mail + ' - ' + message.message, // plain text body
-            html: ' Name: ' + message.name + '/n' +
-            'Email: ' + message.email + '/n' +
-            'Subject: ' + message.subject + '/n' +
-            'Message: ' + message.message + '/n'
-        };
-    } else {
-        mailOptions = {
-            from: gmailEmail, // sender address
-            to: 'bachellerieloic@gmail.com', // list of receivers
-            subject: 'Call To Action Form  ✔', // Subject line
-            text: ' - ' + message, // plain text body
-            html: ' Email ' + message // html body
-        };
-    }
-
-    const getDeliveryStatus = function (error, info) {
-        if (error) {
-            return console.log(error);
-        }
-        console.log('Message sent: %s', info.messageId);
-    };
-
-    transporter.sendMail(mailOptions, getDeliveryStatus);
-    return true;
-};
-
-//.onDataAdded watches for changes in database
-
-// Call To Action
-exports.onDataAdded = functions.database.ref('/callToAction/{sessionId}').onCreate(function (snap, context) {
-
-    const createdData = snap.val();
-    var text = createdData;
-    console.log('Created Data CTA : %s', createdData);
-    return goMail(text);
-});
-
-// Contact Form
-exports.onDataAdded = functions.database.ref('/contacts/{sessionId}').onCreate(function (snap, context) {
-    const createdData = snap.val();
-    var text = createdData;
-    console.log('Created Data Contact : %s', createdData);
-    return goMail(createdData, true);
-});
+const sendEmail = (emailAddress) => {
+    const request = mailjet
+        .post("send", {'version': 'v3.1'})
+        .request({
+            "Messages":[
+                {
+                    "From": {
+                        "Email": "info@finlo.io",
+                        "Name": "Loic"
+                    },
+                    "To": [
+                        {
+                            "Email": emailAddress,
+                            "Name": "Finlo User"
+                        }
+                    ],
+                    "Subject": "Greetings from Finlo.io.",
+                    "TextPart": "My first Mailjet email",
+                    "HTMLPart": "<h3>Dear Finlo future user, welcome to <a href='https://finlo.io/'>Finlo.io</a>!</h3><br /> " +
+                        "We are currently working very hard to launch this platform, " +
+                        "any suggestion is welcome! Feel free to reply to this email!",
+                    "CustomID": "AppGettingStartedTest"
+                }
+            ]
+        })
+    request
+        .then((result) => {
+            // console.log(result.body)
+        })
+        .catch((err) => {
+            console.log(err.statusCode)
+        })
+}
